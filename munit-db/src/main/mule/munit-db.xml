@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="313aca1c-dd78-4485-a71f-65447ff90e2b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Postgres_Database_Config" doc:name="Database Config" doc:id="3e3ef19b-0cfb-4d63-9efd-33bc1ccc2df2" >
+		<db:generic-connection url="jdbc:postgresql://localhost:5432/employees?user=employees&amp;password=employeespw" driverClassName="org.postgresql.Driver"/>
+	</db:config>
+	<flow name="munit-dbFlow" doc:id="ccf5bcd2-2bdb-4819-89a0-d9c462d8f0fc" >
+		<http:listener doc:name="Listener" doc:id="90579225-1ea4-4927-960a-ea84e8812310" config-ref="HTTP_Listener_config" path="munit"/>
+		<ee:transform doc:name="Transform Message" doc:id="52882269-bd31-4366-b102-8542e84513d5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+"This is test message"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+
+</mule>
