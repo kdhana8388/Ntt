@@ -1,0 +1,118 @@
+#%RAML 1.0
+title: s-b2c-customers-soa-services
+version: v1
+baseUri: http://non-prod.apps.api.accaglobal.com/s-b2c-customers-sao-services/{version}/api
+
+uses:
+  commonLib: exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/c4e-common/1.0.6/standards.raml
+  customerLib: exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/bounded-context-b2c-customer-library/1.0.4/b2c-customer-library.raml
+
+/customers:
+  /{accaId}:
+      get:
+        description: |
+          Returns the customer record with optional related subdomain
+        securedBy: commonLib.auth-header
+        is: [
+              commonLib.client-id-required,
+              commonLib.client-tracking-id-options,
+              commonLib.api-correlation-id-required,
+              commonLib.common-errors,
+              commonLib.resource-not-found-response-option
+            ]
+        queryParameters:
+          expand:
+            description: |
+              Optional, returns related information from provided subdomains in a single request
+            required: false
+            type: array
+            items:
+              enum: [consents, contactMechanisms]
+        responses:
+          200:
+            headers: &trackingHeaders
+                Client-Transaction-Id:
+                  description: |
+                    Optional, provides traceability from the client's perspective for the unique transaction
+                  type: string
+                  required: false
+                Client-Session-Id:
+                  description: |
+                    Optional, provides traceability from the client's user's End to End journey/session
+                  type: string
+                  required: false
+                Api-Correlation-Id:
+                  description: |
+                    ID passed between Application Network from single entry point.
+                  type: string
+                  required: true
+            body:
+              application/json:
+                type: customerLib.getCustomerResponse
+                examples:
+                  student: !include exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/bounded-context-b2c-customer-library/1.0.4/examples/customers/student.json
+                  affiliate: !include exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/bounded-context-b2c-customer-library/1.0.4/examples/customers/affiliate.json
+                  member: !include exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/bounded-context-b2c-customer-library/1.0.4/examples/customers/member.json
+                  studentWithResourceExpansion: !include exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/bounded-context-b2c-customer-library/1.0.4/examples/customers/studentWithConsentsAndContactMechanisms.json
+      /consents:
+        get:
+          description: |
+            Returns a list of conenset records available for the customer.
+          securedBy: commonLib.auth-header
+          is: [
+                commonLib.client-id-required,
+                commonLib.client-tracking-id-options,
+                commonLib.api-correlation-id-required,
+                commonLib.common-errors
+              ]
+          responses:
+            200:
+              headers: *trackingHeaders
+              body:
+                application/json:
+                  type: customerLib.getConsentsResponse
+                  examples: 
+                    student: !include examples/consents/studentConsents.json
+                    member: !include examples/consents/memberConsents.json
+                    affiliate: !include examples/consents/affiliateConsents.json
+        patch:
+          description: |
+            Updates a list of consent types for a given array of customer consents
+          securedBy: commonLib.auth-header
+          is: [
+                commonLib.client-id-required,
+                commonLib.client-tracking-id-options,
+                commonLib.api-correlation-id-required,
+                commonLib.common-errors
+              ]
+          body:
+            application/json:
+              examples: 
+                student: !include examples/consents/studentConsents.json
+                member: !include examples/consents/memberConsents.json
+                affiliate: !include examples/consents/affiliateConsents.json
+          responses:
+            200:
+              headers: *trackingHeaders
+              body:
+                application/json:
+                  type: commonLib.simple-success-message
+                  example: !include exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/c4e-common/1.0.6/examples/200-success.json
+      /contactMechanisms:
+        get:
+          description: |
+            Returns customer contact information
+          securedBy: commonLib.auth-header
+          is: [
+                commonLib.client-id-required,
+                commonLib.client-tracking-id-options,
+                commonLib.api-correlation-id-required,
+                commonLib.common-errors
+              ]
+          responses:
+            200:
+              headers: *trackingHeaders
+              body:
+                application/json:
+                  type: customerLib.getContactMechanismsResponse
+                  example: !include exchange_modules/ca704824-20f9-4c01-b4be-2ffc7b71c64f/bounded-context-b2c-customer-library/1.0.4/examples/contactMechanisms/getContactMechanisms.json

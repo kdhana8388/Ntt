@@ -1,0 +1,41 @@
+{
+  "consents": [
+    {
+      "consentType": "importantUpdatesByEmail",
+      "consent": false
+    },
+    {
+      "consentType": "importantUpdatesByPost",
+      "consent": true
+    },
+    {
+      "consentType": "accountUpdatesByEmail",
+      "consent": false
+    },
+    {
+      "consentType": "accountUpdatesByPaper",
+      "consent": true
+    },
+    {
+      "consentType": "accaMarketing",
+      "consent": false
+    },
+    {
+      "consentType": "thirdPartyMarketing",
+      "consent": false
+    },
+    {
+      "consentType": "smsResultConsent",
+      "consent": false
+    },
+    {
+      "consentType": "smsGeneralConsent",
+      "consent": false
+    },
+    {
+      "consentType": "communicationPreference",
+      "consentLevel": 1,
+      "consentLevelDescription": "I would like to receive all correspondence from ACCA by paper where possible"
+    }
+  ]
+}

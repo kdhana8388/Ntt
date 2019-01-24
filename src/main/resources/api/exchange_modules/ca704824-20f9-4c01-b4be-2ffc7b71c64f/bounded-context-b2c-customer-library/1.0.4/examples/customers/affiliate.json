@@ -1,0 +1,9 @@
+{
+  "customer": {
+    "accaId": "12355",
+    "forename": "James",
+    "surname": "Doe",
+    "customerType": "affiliate",
+    "country": "UK"
+  }
+}

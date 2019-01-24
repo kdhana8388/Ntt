@@ -1,0 +1,5 @@
+{
+  "message": "Conflict",
+  "description": "Conflict between the request and current state  of a resource on the server",
+  "code": "CONFLICT"
+}

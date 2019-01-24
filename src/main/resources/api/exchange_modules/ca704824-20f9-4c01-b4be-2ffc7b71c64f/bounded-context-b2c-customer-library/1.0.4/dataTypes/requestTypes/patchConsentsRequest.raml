@@ -1,0 +1,8 @@
+#%RAML 1.0 DataType
+displayName: Patch Consents Request
+type: object
+properties:
+  consents:
+    type: array
+    items: !include ../baseTypes/consent.raml
+    required: true

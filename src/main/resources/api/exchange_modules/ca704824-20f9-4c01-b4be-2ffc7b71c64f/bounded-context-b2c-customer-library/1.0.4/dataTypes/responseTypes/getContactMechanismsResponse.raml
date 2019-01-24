@@ -1,0 +1,8 @@
+#%RAML 1.0 DataType
+displayName: Get Contact Mechanisms Response
+type: object
+properties:
+  contactMechanisms:
+    type: array
+    items: !include ../baseTypes/contactMechanism.raml
+    required: true

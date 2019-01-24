@@ -1,0 +1,5 @@
+{
+  "message": "Not Acceptable",
+  "description": "application/xml not available",
+  "code": "NOT_ACCEPTABLE"
+}

@@ -1,0 +1,21 @@
+{
+  "contactMechanisms": [
+    {
+      "type": "email",
+      "value": "test-member@example.com",
+      "isPrimary": true
+    },
+    {
+      "type": "phone",
+      "subtype": "telephone",
+      "value": "00000000",
+      "isPrimary": true
+    },
+    {
+      "type": "phone",
+      "subtype": "mobile",
+      "value": "00000001",
+      "isPrimary": false
+    }
+  ]
+}

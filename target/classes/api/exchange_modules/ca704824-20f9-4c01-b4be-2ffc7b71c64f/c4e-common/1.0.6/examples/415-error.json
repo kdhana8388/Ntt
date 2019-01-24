@@ -1,0 +1,5 @@
+{
+  "message": "Unsupported Media Type",
+  "description": "Submitted Content-Type not supported",
+  "code": "UNSUPPORTED_MEDIA_TYPE"
+}

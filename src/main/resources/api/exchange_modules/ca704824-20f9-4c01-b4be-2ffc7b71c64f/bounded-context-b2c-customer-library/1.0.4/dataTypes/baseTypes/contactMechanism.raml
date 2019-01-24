@@ -1,0 +1,18 @@
+#%RAML 1.0 DataType
+displayName: Contact Mechanism
+type: object
+properties:
+  type:
+    enum:
+      - email
+      - phone
+    required: true
+  subtype:
+    type: string
+    required: false
+  value:
+    type: string
+    required: false
+  isPrimary:
+    type: boolean
+    required: false

@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	
+	<http:request-config name="webservice_requestor_config" doc:name="HTTP Request configuration" doc:id="b024ed81-2e48-4695-b2af-754136f4222a" responseTimeout="60000" />
+	
+	
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="e7a999f1-ca94-46d1-91a6-641c9a3a812f" >
+		<wsc:connection wsdlLocation="https://dev.soa.acca-awscloud.net/internal/GetCustomer_v4/GetCustomer_Cloudhub_PS?wsdl" service="GetCustomerSOAPBindingQSService" port="GetCustomerSOAPBindingQSPort" address="https://dev.soa.acca-awscloud.net:443/internal/GetCustomer_v4/GetCustomer_Cloudhub_PS" >
+			
+			<wsc:custom-transport-configuration>
+				<wsc:http-transport-configuration requesterConfig="webservice_requestor_config"/>
+				
+			
+</wsc:custom-transport-configuration>
+			
+			
+			
+			<wsc:web-service-security >
+				<wsc:username-token-security-strategy username="cloudhubServiceAccount" password="k2T83F5g2y" />
+			</wsc:web-service-security>
+			
+		</wsc:connection>
+		
+	</wsc:config>
+	<!-- 
+	<validation:config name="customerIsB2Cb" doc:name="Validation Config" doc:id="102c002e-db18-4a25-b444-b747c0af62b4" i18n="payload.body.GetCustomerResponse.Customer.Person == null" />
+	-->
+	<sub-flow name="get-soa-customer-subflow" doc:id="6ffd8368-89a8-4949-89d8-48ac66e6e4f3" >
+		
+		<wsc:consume doc:name="Get Soa Customer" doc:id="e7a999f1-ca94-46d1-91a6-641c9a3a812f" config-ref="Web_Service_Consumer_Config" operation="GetCustomer">
+			<wsc:message >
+				<wsc:body ><![CDATA[#[%dw 2.0
+output application/xml
+ns ns0 http://xmlns.accaglobal.com/EnterpriseBusinessMessage/GetCustomer/v4.0
+ns ns01 http://xmlns.accaglobal.com/CommonBusinessComponents/ACCAHeader/v2.0
+---
+{
+	ns0#GetCustomerRequest: {
+		ns0#ACCAHeader: {
+			ns01#UserId: '1',
+			ns01#SenderId: '1'
+		},
+		ns0#ACCAId: vars.accaId
+		
+	}
+}]]]></wsc:body>
+			</wsc:message>
+		</wsc:consume>
+		
+	
+
+</sub-flow>
+	<flow name="get-customer" doc:id="890ee1d7-3709-452e-bdbd-18974fcca4dc" >
+	 	
+		<ee:transform doc:name="vars: accaId and expansions" doc:id="79be5d9f-3b5b-48a0-bd61-fc353e35a53c" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="expandConsents" ><![CDATA[%dw 2.0
+output application/java
+---
+if (
+		(lower(attributes.queryParams.expand) default "") contains ("consents")
+	) true
+	else
+		false]]></ee:set-variable>
+				<ee:set-variable variableName="accaId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.uriParams.accaId]]></ee:set-variable>
+				<ee:set-variable variableName="expandContactMechanisms" ><![CDATA[%dw 2.0
+output application/java
+---
+(
+	if (
+		(lower(attributes.queryParams.expand) default "") contains ("contactmechanisms")
+	) true
+	else
+		false
+)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		
+		<flow-ref doc:name="get-soa-customer-subflow" doc:id="98cb49c4-fff9-4e8b-93e0-604e21793641" name="get-soa-customer-subflow"/>
+		 
+		
+		<ee:transform doc:name="customer response transformation" doc:id="a767bea4-4ed2-413d-9f54-284f0aec19ea">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var customer=payload.body.GetCustomerResponse.Customer
+var person=customer.Person
+var contactMechanisms=customer.ContactMechanism
+var primaryAddressConsents=(
+		(
+			(contactMechanisms.AddressList.*Address default []) 
+			filter (
+				if ($.PurposeList != null) $.PurposeList..Description contains "Identifying"
+				else false
+			)
+		).PurposeList.*Purpose.Code default []
+)
+var primaryPhoneConsents=(
+	(
+		(contactMechanisms.PhoneList.*Phone default []) 
+		filter (
+			if ($.PurposeList != null) $.PurposeList..Description contains "Identifying"
+			else false
+		)
+	).PurposeList.*Purpose.Description default []
+)
+var primaryEmail=(
+	(
+		(contactMechanisms.EmailList.*Email default []) 
+		filter (
+			if ($.PurposeList != null) $.PurposeList..Description contains "Identifying"
+			else false
+		)
+	)[0] default null
+)
+var emailsAllowed=(primaryEmail.MarketingAllowed == "Y")
+var postAllowed= not (
+	(primaryEmail.PurposeList.*Purpose.Description default []) 
+	contains "Mailing"
+)
+---
+{
+	customer: {
+		accaId: customer.ACCAId,
+		title: person.Title,
+		forename: person.FirstName,
+		surname: person.LastName,
+		customerType: person.PrimaryRoleType,
+		countryOfResidence: person.CountryOfResidence,
+		(
+			contactMechanisms:  (
+				contactMechanisms.PhoneList.*Phone map ((phoneItem) -> {
+					"type": "phone",
+					subtype: phoneItem.Type,
+					value: phoneItem.ContactNumber,
+					isPrimary: (phoneItem.PurposeList.*Purpose.Description default []) contains "Identifying"
+				}) default []
+			) 
+			++
+			(
+				contactMechanisms.EmailList.*Email map ((emailItem) -> {
+					"type": "email",
+					value: emailItem.EmailAddress,
+					isPrimary: (emailItem.PurposeList.*Purpose.Description default []) contains "Identifying"
+				}) default []
+			) 
+		) if vars.expandContactMechanisms == true,
+		(
+			consents: [
+				{
+					"consentType": "importantUpdatesByEmail",
+					"consent": (
+						if ((not emailsAllowed) and postAllowed) false
+						else if (emailsAllowed and (not postAllowed)) true
+						else if (emailsAllowed and postAllowed) false
+						else null
+					)
+				},
+				{
+					"consentType": "importantUpdatesByPost",
+					"consent": (
+						if ((not emailsAllowed) and postAllowed) true
+						else if (emailsAllowed and (not postAllowed)) false
+						else if (emailsAllowed and postAllowed) true
+						else null
+					)
+				},
+				{
+					"consentType": "accountUpdatesByEmail",
+					"consent": (
+						if ((not emailsAllowed) and postAllowed) false
+						else if (emailsAllowed and (not postAllowed)) true
+						else if (emailsAllowed and postAllowed) true
+						else null
+					)
+				},
+				{
+					"consentType": "accountUpdatesByPost",
+					"consent": (
+						if ((not emailsAllowed) and postAllowed) true
+						else if (emailsAllowed and (not postAllowed)) false
+						else if (emailsAllowed and postAllowed) false
+						else null
+					)
+				},
+				{
+					consentType: "accaMarketing",
+					consent: primaryAddressConsents contains "ACCA_ALLOW_MKTING"
+				},
+				{
+					consentType: "thirdPartyMarketing",
+					consent: primaryAddressConsents contains "ACCA_ALLOW_THIRD_MKT"
+				},
+				{
+					consentType: "smsResultConsent",
+					consent: primaryPhoneConsents contains "Exam Results"
+				},
+				{
+					consentType: "smsGeneralConsent",
+					consent: primaryPhoneConsents contains "Allow SMS"
+				}
+				
+			]
+		) if vars.expandConsents == true
+	}
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="c9f2c31e-808f-47fe-9aec-80c07d7c5680" message="End get customer flow"/>
+	
+	
+</flow>
+
+	<flow name="get-customer-xml-testing" doc:id="44301d43-0fde-41b0-a11d-ea560f35dd23" >
+	 	 <http:listener config-ref="httpListenerConfigDefault" path="/customer-xml/{accaId}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+		<ee:transform doc:name="vars: accaId and expansions" doc:id="12f03275-e377-480f-a386-bfbd7eedcbea" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="expandConsents" ><![CDATA[%dw 2.0
+output application/java
+---
+if (
+		(lower(attributes.queryParams.expand) default "") contains ("consents")
+	) true
+	else
+		false]]></ee:set-variable>
+				<ee:set-variable variableName="accaId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.uriParams.accaId]]></ee:set-variable>
+				<ee:set-variable variableName="expandContactMechanisms" ><![CDATA[%dw 2.0
+output application/java
+---
+(
+	if (
+		(lower(attributes.queryParams.expand) default "") contains ("contactmechanisms")
+	) true
+	else
+		false
+)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		
+		<flow-ref doc:name="get-soa-customer-subflow" doc:id="4059fce5-b389-45a4-87f8-faac7618b332" name="get-soa-customer-subflow"/>
+		
+		<ee:transform doc:name="to xml" doc:id="c75363e1-d4c2-429c-8f7c-cfe9f686b811" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+payload.body]]></ee:set-payload>
+
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+</flow>
+	<flow name="customersFlow" doc:id="6d0970eb-58fb-4d5c-8837-fd3dcd99ffe9" >
+		<ee:transform doc:name="Transform Message" doc:id="c1702063-fe13-468d-9c28-325ff216e47b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+
+
+
+</mule>

@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="Get-Customer-SOA-Response" format="xml">
+      <types:example format="xml" element="{http://xmlns.oracle.com/sca/tracking/1.0}tracking.ecid" location="examples/GetCustomerXmlResponse.xml"/>
+    </types:type>
+    <types:type name="patch-consents-input" format="json">
+      <types:shape format="weave" example="examples/patch_customers_{accaid}_consents_application_json.json"><![CDATA[%dw 2.0
+type patch_consents_input = {|
+  consents: Array<{|
+    consentType: String, 
+    consentLevel: Number {"typeId": "int"}, 
+    consent: Boolean
+  |}>
+|} {"MetadataFormat": "json",
+"example": "{\"consents\":[{\"consentType\":\"emailConsentLevel\",\"consentLevel\":1},{\"consentType\":\"accaMarketing\",\"consent\":true},{\"consentType\":\"thirdPartyMarketing\",\"consent\":true},{\"consentType\":\"employerConsent\",\"consent\":true},{\"consentType\":\"smsGeneralConsent\",\"consent\":true},{\"consentType\":\"smsResultConsent\",\"consent\":true},{\"consentType\":\"emailResultConsent\",\"consent\":true},{\"consentType\":\"directoryOfMembers\",\"consent\":true},{\"consentType\":\"exchangeConsent\",\"consent\":true},{\"consentType\":\"affiliateList\",\"consent\":true}]}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#a767bea4-4ed2-413d-9f54-284f0aec19ea">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Get-Customer-SOA-Response"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#5ce9422a-6530-4a1e-ae19-7bc6ebe2fd0a">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="patch-consents-input"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#c75363e1-d4c2-429c-8f7c-cfe9f686b811"/>
+  <types:enrichment select="#5541c94d-da1e-45f5-9a6e-79f57c3435f4">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Get-Customer-SOA-Response"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#cd407f9c-5f89-497b-b97a-b67037ecee39">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Get-Customer-SOA-Response"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#c1702063-fe13-468d-9c28-325ff216e47b">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Get-Customer-SOA-Response"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

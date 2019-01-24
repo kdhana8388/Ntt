@@ -1,0 +1,16 @@
+#%RAML 1.0 DataType
+displayName: Error Message
+properties: 
+  message:
+    description: A short message informing the user of the error.
+    type: string
+    required: true
+    example: "Bad Request"
+  description:
+    type: string
+    required: false
+    example: "Business Validation Error"
+  code:
+    description: Error code relating to the type of error. This may be displayed to an End User when used in Experience APIs.
+    required: false
+    example: "ACCA Error 1234"

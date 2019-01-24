@@ -1,0 +1,26 @@
+#%RAML 1.0 Trait
+description: |
+  API request may return a 404 Resource not found response
+responses:
+  404:
+    description: Resource Not Found
+    headers:
+      Client-Transaction-Id:
+        description: |
+          Optional, provides traceability from the client's perspective for the unique transaction
+        type: string
+        required: false
+      Client-Session-Id:
+        description: |
+          Optional, provides traceability from the client's user's End to End journey/session
+        type: string
+        required: false
+      Api-Correlation-Id:
+        description: |
+          ID passed between Application Network from single entry point.
+        type: string
+        required: true
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/400-error.json

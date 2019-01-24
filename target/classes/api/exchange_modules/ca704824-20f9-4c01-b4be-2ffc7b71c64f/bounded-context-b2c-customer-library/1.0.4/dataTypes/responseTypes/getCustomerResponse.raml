@@ -1,0 +1,15 @@
+#%RAML 1.0 DataType
+displayName: Get Customer Response
+type: object
+properties:
+  customer:
+    type: !include ../baseTypes/customer.raml
+    required: true
+  contactMechanisms:
+    type: array
+    items: !include ../baseTypes/contactMechanism.raml
+    required: false
+  consents:
+    type: array
+    items: !include ../baseTypes/consent.raml
+    required: false

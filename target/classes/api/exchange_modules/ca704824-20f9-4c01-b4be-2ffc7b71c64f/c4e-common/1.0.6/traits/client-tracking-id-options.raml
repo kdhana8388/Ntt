@@ -1,0 +1,12 @@
+#%RAML 1.0 Trait
+headers:
+  Client-Transaction-Id:
+    description: |
+      Optional, provides traceability from the client's perspective for the unique transaction
+    type: string
+    required: false
+  Client-Session-Id:
+    description: |
+      Optional, provides traceability from the client's user's End to End journey/session
+    type: string
+    required: false

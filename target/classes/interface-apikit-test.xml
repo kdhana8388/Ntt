@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <munit:config name="interface-apikit-test.xml" />
+    <http:request-config name="HTTP_Request_Configuration" basePath="/api">
+        <http:request-connection host="localhost" port="8081" />
+        <http:default-headers >
+			<http:default-header key="client_id" value="460fcf3b743d427ca0335baa40fcfbfe" />
+			<http:default-header key="client_secret" value="c10431dC9cA94427AD36822da401d938" />
+			<http:default-header key="Authorization" value="Bearer_ateafhj" />
+		</http:default-headers>
+    </http:request-config>
+    <munit:test name="patch:\customers\(accaId)\consents:api-config-200-application\json-FlowTest" description="Verifying functionality of [patch:\customers\(accaId)\consents:api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="patch:\customers\(accaId)\consents:router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="49e12fea-bb35-4b6a-95ae-9cd38cf34ffd" processor="wsc:consume">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute attributeName="operation" whereValue="GetCustomer" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[%dw 2.0
+output application/java
+---
+{
+	body: read(
+		MunitTools::getResourceAsString('soap_response_examples/GetCustomerXmlResponse.xml'),
+		&quot;application/xml&quot;
+		)
+	
+}]" mediaType="application/java"/>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="379af9c9-688f-4aaa-a048-d84519e9df84" processor="wsc:consume">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute attributeName="operation" whereValue="#['UpdateCustomer']" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="PATCH" path="#['/customers/$(vars.accaId)/consents']" doc:id="113c55f9-900e-4a8e-b1ae-817f7531a767">
+             <http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+read(
+	MunitTools::getResourceAsString('scaffolder/request/patch_customers_{accaid}_consents_application_json.json'),
+	"application/json"
+)]]]></http:body>
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Api-Correlation-Id" : "123561358",
+	"Accept" : "application/json"
+}]]]></http:headers>
+               </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[output application/java ---write(payload, 'application/json') as String]" is="#[MunitTools::equalToIgnoringWhiteSpace(MunitTools::getResourceAsString('scaffolder/response/patch_200_customers_{accaid}_consents_application_json.json'))]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="patch:\customers\(accaId)\consents:api-config-500-application\json-FlowTest" description="Verifying functionality of [patch:\customers\(accaId)\consents:api-config-500-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="patch:\customers\(accaId)\consents:router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <set-payload value="#[MunitTools::getResourceAsString('scaffolder/request/patch_customers_{accaid}_consents_application_json.json')]" />
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="PATCH" path="#['/customers/$(vars.accaId)/consents']" doc:id="4275d436-89d8-4930-a275-977af850b1d1">
+                <http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+read(
+	MunitTools::getResourceAsString('scaffolder/request/patch_customers_{accaid}_consents_application_json2_500.json'),
+	"application/json"
+)]]]></http:body>
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Api-Correlation-Id" : "123561358",
+	"Accept" : "application/json"
+}]]]></http:headers>
+                <http:response-validator>
+                    <http:success-status-code-validator values="500" />
+                </http:response-validator>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(500)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 500" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\customers\(accaId)\consents:api-config-200-application\json-FlowTest" description="Verifying functionality of [get:\customers\(accaId)\consents:api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="get:\customers\(accaId)\consents:router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="e29e3895-6521-42bb-9037-ad483f598491" processor="wsc:consume">
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[%dw 2.0
+output application/java
+---
+{
+	body: read(
+		MunitTools::getResourceAsString('soap_response_examples/GetCustomerXmlResponse.xml'),
+		&quot;application/xml&quot;
+		)
+	
+}]" mediaType="application/java"/>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+			<http:request config-ref="HTTP_Request_Configuration" method="GET" path="#['/customers/$(vars.accaId)/consents']">
+            <http:headers>#[{"Api-Correlation-Id":"123561358","Accept":"application/json"}]</http:headers>
+                </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[output application/java ---write(payload, 'application/json') as String]" is="#[MunitTools::equalToIgnoringWhiteSpace(MunitTools::getResourceAsString('scaffolder/response/get_200_customers_{accaid}_consents_application_json.json'))]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" doc:id="170735f2-b672-4f10-8a1f-c2f46d136ad5"/>
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\customers\(accaId)\consents:api-config-500-application\json-FlowTest" description="Verifying functionality of [get:\customers\(accaId)\consents:api-config-500-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="get:\customers\(accaId)\consents:router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+         <munit-tools:mock-when doc:name="Mock when" doc:id="cc2a515f-f323-44be-89a5-c8f727314e17" processor="wsc:consume">
+			</munit-tools:mock-when>
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="GET" path="#['/customers/$(vars.accaId)/consents']">
+                <http:headers>#[{"Api-Correlation-Id":"1523451737","Accept":"application/json"}]</http:headers>
+                <http:response-validator>
+                    <http:success-status-code-validator values="500" />
+                </http:response-validator>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(500)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 500" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\customers\(accaId)\contactMechanisms:api-config-200-application\json-FlowTest" description="Verifying functionality of [get:\customers\(accaId)\contactMechanisms:api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="get:\customers\(accaId)\contactMechanisms:router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+         <munit-tools:mock-when doc:name="Mock when" doc:id="8f288766-1774-49e6-ac24-d6e0138c5152" processor="wsc:consume">
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[%dw 2.0
+output application/java
+---
+{
+	body: read(
+		MunitTools::getResourceAsString('soap_response_examples/GetCustomerXmlResponse.xml'),
+		&quot;application/xml&quot;
+		)
+	
+}]" mediaType="application/java"/>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="GET" path="#['/customers/$(vars.accaId)/contactMechanisms']">
+                <http:headers>#[{"Api-Correlation-Id":"1354178863","Accept":"application/json"}]</http:headers>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[output application/java ---write(payload, 'application/json') as String]" is="#[MunitTools::equalToIgnoringWhiteSpace(MunitTools::getResourceAsString('scaffolder/response/get_200_customers_{accaid}_contactmechanisms_application_json.json'))]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\customers\(accaId)\contactMechanisms:api-config-500-application\json-FlowTest" description="Verifying functionality of [get:\customers\(accaId)\contactMechanisms:api-config-500-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="get:\customers\(accaId)\contactMechanisms:router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+         <munit-tools:mock-when doc:name="Mock when" doc:id="b78afe3c-6e65-4c68-963f-1fd992c1440e" processor="wsc:consume">
+			</munit-tools:mock-when>
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="GET" path="#['/customers/$(vars.accaId)/contactMechanisms']">
+                <http:headers>#[{"Api-Correlation-Id":"65138681","Accept":"application/json"}]</http:headers>
+                <http:response-validator>
+                    <http:success-status-code-validator values="500" />
+                </http:response-validator>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(500)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 500" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\customers\(accaId):api-config-200-application\json-FlowTest" description="Verifying functionality of [get:\customers\(accaId):api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="get:\customers\(accaId):router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+         <munit-tools:mock-when doc:name="Mock when" doc:id="8eec0bc5-98d1-4718-b4aa-d20ef78cbbd7" processor="wsc:consume">
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[%dw 2.0
+output application/java
+---
+{
+	body: read(
+		MunitTools::getResourceAsString('soap_response_examples/GetCustomerXmlResponse.xml'),
+		&quot;application/xml&quot;
+		)
+	
+}]" mediaType="application/java"/>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="GET" path="#['/customers/$(vars.accaId)']">
+                <http:headers>#[{"Api-Correlation-Id":"87523719","Accept":"application/json"}]</http:headers>
+                <http:query-params>#[{}]</http:query-params>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[output application/java ---write(payload, 'application/json') as String]" is="#[MunitTools::equalToIgnoringWhiteSpace(MunitTools::getResourceAsString('scaffolder/response/get_200_customers_{accaid}_application_json.json'))]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\customers\(accaId):api-config-500-application\json-FlowTest" description="Verifying functionality of [get:\customers\(accaId):api-config-500-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="main-api" />
+            <munit:enable-flow-source value="get:\customers\(accaId):router-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+         <munit-tools:mock-when doc:name="Mock when" doc:id="6c21d67a-876c-4c2f-88d3-e1d452853f5c" processor="wsc:consume">
+			</munit-tools:mock-when>
+            <set-variable variableName="accaId" value="#['null']" doc:name="accaId" />
+        </munit:behavior>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="GET" path="#['/customers/$(vars.accaId)']">
+                <http:headers>#[{"Api-Correlation-Id":"763195391","Accept":"application/json"}]</http:headers>
+                <http:query-params>#[{}]</http:query-params>
+                <http:response-validator>
+                    <http:success-status-code-validator values="500" />
+                </http:response-validator>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(500)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 500" />
+        </munit:validation>
+    </munit:test>
+</mule>

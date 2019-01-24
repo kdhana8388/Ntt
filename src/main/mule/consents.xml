@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	
+	
+	
+	
+	<wsc:config name="wsc-update-customer-config" doc:name="Web Service Consumer Config" doc:id="906515e9-5fac-4e78-9d3f-602bbd27110b" >
+		<wsc:connection wsdlLocation="https://dev.soa.acca-awscloud.net/internal/UpdateCustomer_v1/UpdateCustomer_Cloudhub_PS?wsdl" service="UpdateCustomerSOAPBindingQSService" port="UpdateCustomerSOAPBindingQSPort" address="https://dev.soa.acca-awscloud.net:443/internal/UpdateCustomer_v1/UpdateCustomer_Cloudhub_PS" >
+			<wsc:custom-transport-configuration >
+				<wsc:http-transport-configuration requesterConfig="webservice_requestor_config" />
+			</wsc:custom-transport-configuration>
+			<wsc:web-service-security >
+				<wsc:username-token-security-strategy username="cloudhubServiceAccount" password="k2T83F5g2y" />
+			</wsc:web-service-security>
+		</wsc:connection>
+	</wsc:config>
+	<validation:config name="Validation_Config_Local_Expression" doc:name="Validation Config" doc:id="332bd7f2-287c-49e3-b8ab-8338f19d46a5"/>
+	<flow name="get-consents-flow" doc:id="9c3b0da2-1447-4a05-a992-9794e1438072" >
+		<flow-ref doc:name="get-soa-customer-subflow" doc:id="82fd4332-96ad-4faf-a6b2-28836b49c0c9" name="get-soa-customer-subflow"/>
+		<ee:transform doc:name="Get Consents Response" doc:id="d1343df2-ac05-4c15-a679-ea3acb5e8afb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var customer=payload.body.GetCustomerResponse.Customer
+var person=customer.Person
+var contactMechanisms=customer.ContactMechanism
+var primaryAddressConsents=(
+		(
+			(contactMechanisms.AddressList.*Address default []) 
+			filter ($.PurposeList..Description contains "Identifying")
+		).PurposeList.*Purpose.Code default []
+)
+var primaryPhoneConsents=(
+	(
+		(contactMechanisms.PhoneList.*Phone default []) 
+		filter ($.PurposeList..Description contains "Identifying")
+	).PurposeList.*Purpose.Description default []
+)
+var primaryEmail=(
+	(
+		(contactMechanisms.EmailList.*Email default []) 
+		filter ($.PurposeList..Description contains "Identifying")
+	)[0] default null
+)
+var emailsAllowed=(primaryEmail.MarketingAllowed == "Y")
+var postAllowed= not (
+	(primaryEmail.PurposeList.*Purpose.Description default []) 
+	contains "Mailing"
+)
+---
+{
+	consents: [
+		{
+			"consentType": "importantUpdatesByEmail",
+			"consent": false
+		},
+		{
+			"consentType": "importantUpdatesByPost",
+			"consent": true
+		},
+		{
+			"consentType": "accountUpdatesByEmail",
+			"consent": false
+		},
+		{
+			"consentType": "accountUpdatesByPaper",
+			"consent": true
+		},
+		{
+			consentType: "accaMarketing",
+			consent: primaryAddressConsents contains "ACCA_ALLOW_MKTING"
+		},
+		{
+			consentType: "thirdPartyMarketing",
+			consent: primaryAddressConsents contains "ACCA_ALLOW_THIRD_MKT"
+		},
+		{
+			consentType: "smsResultConsent",
+			consent: primaryPhoneConsents contains "Exam Results"
+		},
+		{
+			consentType: "smsGeneralConsent",
+			consent: primaryPhoneConsents contains "Allow SMS"
+		},
+		{
+			consentType: "communicationPreference",
+			consentLevel: (
+				// All Correspondence by Paper where possible
+				if ( (not emailsAllowed) and postAllowed) 1
+				// All Correspondence by Email where possible
+				else if (emailsAllowed and (not postAllowed)) 2
+				// Publications and updates by Email, Account Correspondence by Paper where possible
+				else if (emailsAllowed and postAllowed) 3
+				else null	
+			),
+			consentLevelDescription: (
+				if ( (not emailsAllowed) and postAllowed) "I would like to receive all correspondence from ACCA by paper where possible"
+				else if (emailsAllowed and (not postAllowed)) "I would like to receive all correspondence from ACCA by e-communications where possible"
+				else if (emailsAllowed and postAllowed) "I would like to receive publications and updates by e-communications but still receive my account correspondence by paper"
+				else null	
+			)
+		}
+	]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2e38b775-ea99-4ac4-ba9f-9d6888e56cfc" message="End Consents Flow"/>
+	
+</flow>
+	<flow name="update-consents-flow" doc:id="9605ce9d-f178-413a-92e5-5b646987d891" >
+		<ee:transform doc:name="vars: update customer" doc:id="5ce9422a-6530-4a1e-ae19-7bc6ebe2fd0a" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="accaId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.uriParams.accaId]]></ee:set-variable>
+				<ee:set-variable variableName="requestedConsents" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.consents map ((consent) -> 
+	 { 
+	 	(consent.consentType): if (consent.consent != null) consent.consent else consent.consentLevel
+	 }
+)
+
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		
+		<flow-ref doc:name="validate-consent-combinations-subflow" doc:id="712659aa-e2f6-4312-a09b-2b59913030d9" name="validate-consent-combinations-subflow"/>
+		<flow-ref doc:name="get-soa-customer-subflow" doc:id="1bd9da2c-9f59-4e74-94f4-92cf05340385" name="get-soa-customer-subflow"/>
+	 	   
+	 	  		 <wsc:consume doc:name="Update Consents (with transformation)" doc:id="52d2d480-3125-44e5-9b3d-52b5ce7bbbb0" config-ref="wsc-update-customer-config" operation="UpdateCustomer">
+			<wsc:message >
+				<wsc:body ><![CDATA[#[%dw 2.0
+output application/xml
+ns ns0 http://xmlns.accaglobal.com/EnterpriseBusinessMessage/UpdateCustomer/v1.0
+ns ns01 http://xmlns.accaglobal.com/CommonBusinessComponents/ACCAHeader/v2.0
+ns ns02 http://xmlns.accaglobal.com/EnterpriseBusinessMessage/GetCustomer/v4.0
+ns ns03 http://xmlns.accaglobal.com/EnterpriseBusinessObjects/Customer/v4.0
+ns ns04 http://xmlns.accaglobal.com/EnterpriseBusinessObjects/ContactMechanism/v1.0
+ns ns05 http://xmlns.accaglobal.com/CommonBusinessComponents/Common/v2.0
+var customerResponse=payload.body.ns02#GetCustomerResponse
+var contactMechanisms=customerResponse.ns02#Customer.ns03#ContactMechanism
+---
+{
+	ns0#UpdateCustomerRequest: {
+		ns0#ACCAHeader: customerResponse.ns02#ACCAHeader,
+		ns0#Customer: {
+			ns03#ACCAId: customerResponse.ns02#Customer.ns03#ACCAId,
+			ns03#ContactMechanism: {
+				ns04#PhoneList: {
+					((contactMechanisms.ns04#PhoneList.*ns04#Phone filter 
+							($.PurposeList..Description contains "Identifying")
+						
+						) map (( phone , indexOfPhone ) -> {
+						ns04#Phone: {
+							ns05#Type: phone.ns05#Type,
+							ns05#AreaCode: phone.ns05#AreaCode,
+							ns05#ContactNumber: phone.ns05#ContactNumber,
+							ns05#CountryCode: phone.ns05#CountryCode,
+							ns04#Extension: phone.ns04#Extension,
+							ns04#ContactID: phone.ns04#ContactID,
+							ns04#MarketingAllowed: phone.ns04#MarketingAllowed,
+							ns04#StartDate: phone.ns04#StartDate,
+							ns04#EndDate: phone.ns04#EndDate,
+							ns04#RoleType: phone.ns04#RoleType,
+							ns04#PurposeList: {(
+								(
+									((phone.ns04#PurposeList.*ns04#Purpose 
+										filter (
+											(
+												if ((vars.requestedConsents.smsResultConsent[0] == false) default false)
+												$.Description != "Exam Results"
+												else true
+											) 
+											and
+											(
+												if ((vars.requestedConsents.smsGeneralConsent[0] == false) default false)
+												$.Description != "Allow SMS"
+												else true
+											)
+										)
+										
+										) 
+									 default []) map ((purposeItem) -> {
+											ns04#Purpose: purposeItem 
+									}) 
+									++
+									[
+										{
+											ns04#Purpose: {
+												ns04#Code: null,
+												(ns04#Description: "Exam Results") if ((vars.requestedConsents.smsResultConsent[0] == true) default false),
+												ns04#StartDate: null,
+												ns04#EndDate: null
+											}
+										},
+										{
+											ns04#Purpose: {
+												ns04#Code: null,
+												(ns04#Description: "Allow SMS") if ((vars.requestedConsents.smsGeneralConsent[0] == true) default false),
+												ns04#StartDate: null,
+												ns04#EndDate: null
+											}
+										}
+									] filter $.ns04#Purpose.ns04#Description != null
+								) distinctBy $.ns04#Purpose.ns04#Description
+							)},
+							ns04#ValidationStatus: phone.ns04#ValidationStatus
+						}
+					}))
+				} 
+				++
+				{
+					(contactMechanisms.ns04#PhoneList.*ns04#Phone 
+						filter 
+							(not ($.PurposeList..Description contains "Identifying"))
+						
+						)
+				},
+				ns04#EmailList: {(
+					(
+						(
+							contactMechanisms.ns04#EmailList.*ns04#Email
+							filter ($.PurposeList..Description contains "Identifying")
+						) map ( email , indexOfEmail ) -> {
+							ns04#Email: {
+								ns04#EmailAddress: email.ns04#EmailAddress,
+								ns04#ContactID: email.ns04#ContactID,
+								ns04#MarketingAllowed: (
+									if ((vars.requestedConsents.emailConsentLevel[0] == 2) default false) "Y"
+									else if ((vars.requestedConsents.emailConsentLevel[0] == 3) default false) "Y"
+									else if ((vars.requestedConsents.emailConsentLevel[0] == 1) default false) "N"
+									else email.ns04#MarketingAllowed
+								),
+								ns04#StartDate: email.ns04#StartDate,
+								ns04#EndDate: email.ns04#EndDate,
+								ns04#RoleType: email.ns04#RoleType,
+								ns04#PurposeList: {(
+									(
+										(
+											(
+												email.ns04#PurposeList.*ns04#Purpose
+												filter (
+													(
+														if ((vars.requestedConsents.emailConsentLevel[0] == 1) default false)
+														$.Description != "Mailing"
+														else true
+													)
+													and
+													(
+														if ((vars.requestedConsents.emailConsentLevel[0] == 3) default false)
+														$.Description != "Mailing"
+														else true
+													)
+												)
+											) map ( purpose , indexOfPurpose ) -> {
+												ns04#Purpose: purpose
+											}
+										)
+										++
+										[
+											{
+												ns04#Purpose: {
+													ns04#Code: null,
+													(ns04#Description: "Mailing") if ((vars.requestedConsents.emailConsentLevel[0] == 2) default false),
+													ns04#StartDate: null,
+													ns04#EndDate: null
+												}
+											}
+										] filter ($.ns04#Purpose.ns04#Description != null)	
+									) distinctBy $.ns04#Purpose.ns04#Description
+								)},
+								ns04#ValidationStatus: email.ns04#ValidationStatus
+							}
+						}
+				)
+				++
+				(
+					contactMechanisms.ns04#EmailList.*ns04#Email
+					filter (not ($.PurposeList..Description contains "Identifying"))
+				)
+				)},
+				ns04#AddressList: {
+					
+						
+						((contactMechanisms.ns04#AddressList.*ns04#Address filter 
+							($.PurposeList..Description contains "Identifying")
+						
+						)
+							 map ( address , indexOfAddress ) -> {
+							ns04#Address: {
+								ns05#AddressLine1: address.ns05#AddressLine1,
+								ns05#AddressLine2: address.ns05#AddressLine2,
+								ns05#AddressLine3: address.ns05#AddressLine3,
+								ns05#AddressLine4: address.ns05#AddressLine4,
+								ns05#City: address.ns05#City,
+								ns05#State: address.ns05#State,
+								ns05#Province: address.ns05#Province,
+								ns05#County: address.ns05#County,
+								ns05#Country: address.ns05#Country,
+								ns05#Postcode: address.ns05#Postcode,
+								ns04#Addressee: address.ns04#Addressee,
+								ns04#ContactID: address.ns04#ContactID,
+								ns04#MarketingAllowed: address.ns04#MarketingAllowed,
+								ns04#StartDate: address.ns04#StartDate,
+								ns04#EndDate: address.ns04#EndDate,
+								ns04#RoleType: address.ns04#RoleType,
+								ns04#PurposeList: {(
+									(
+										(
+											address.ns04#PurposeList.*ns04#Purpose 
+											filter (
+												(
+													if ((vars.requestedConsents.accaMarketing[0] == false) default false)
+													$.Code != "ACCA_ALLOW_MKTING"
+													else true
+												) 
+												and
+												(
+													if ((vars.requestedConsents.thirdPartyMarketing[0] == false) default false)
+													$.Code != "ACCA_ALLOW_THIRD_MKT"
+													else true
+												)
+											)
+										) map ((purposeItem) -> {
+												ns04#Purpose: purposeItem
+										})
+										++
+										
+										[
+											{
+												ns04#Purpose: {
+													ns04#Code: "ACCA_ALLOW_MKTING",
+													(ns04#Description: "Release Student Details") if ((vars.requestedConsents.accaMarketing[0] == true) default false),
+													ns04#StartDate: null,
+													ns04#EndDate: null
+												}
+											},
+											{
+												ns04#Purpose: {
+													ns04#Code: "ACCA_ALLOW_THIRD_MKT",
+													(ns04#Description: "Allow Third Party Marketing") if ((vars.requestedConsents.thirdPartyMarketing[0] == true) default false),
+													ns04#StartDate: null,
+													ns04#EndDate: null
+												}
+											}
+										] filter $.ns04#Purpose.Description != null
+									) distinctBy $.ns04#Purpose.Description	
+								)},
+								ns04#SourceDataIdentifier: address.ns04#SourceDataIdentifier,
+								ns04#DataLevel: address.ns04#DataLevel,
+								ns04#PostProcessing: address.ns04#PostProcessing
+							}
+						})  
+				}
+				++
+				{(
+					contactMechanisms.ns04#AddressList.*ns04#Address 
+					filter (not ($.PurposeList..Description contains "Identifying"))
+				)}
+			}
+		}
+	}
+}]]]></wsc:body>
+			</wsc:message>
+		</wsc:consume>
+		<ee:transform doc:name="Update Successful Response" doc:id="4b70cb8a-b1c3-42d9-8105-ab560f80f79d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Success"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		
+		
+</flow>
+	<sub-flow name="validate-consent-combinations-subflow" doc:id="6c9c73d5-a69a-4f74-9d45-dcf13e0d0f22" >
+		<ee:transform doc:name="var: emailAndPostConsentLevel" doc:id="b7efc0a9-d7f8-4801-a336-aca8e2694f30" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="emailAndPostConsentLevel" ><![CDATA[%dw 2.0
+output application/java
+---
+
+if (
+	(vars.requestedConsents.importantUpdatesByEmail[0] == null)
+	and (vars.requestedConsents.importantUpdatesByPost[0] == null)
+	and (vars.requestedConsents.accountUpdatesByEmail[0] == null)
+	and (vars.requestedConsents.accountUpdatesByPost[0] == null) 
+) 0 // consentLevel not requested to be changed
+else if (
+	(vars.requestedConsents.importantUpdatesByEmail[0] == false)
+	and (vars.requestedConsents.importantUpdatesByPost[0] == true)
+	and (vars.requestedConsents.accountUpdatesByEmail[0] == false)
+	and (vars.requestedConsents.accountUpdatesByPost[0] == true) 
+) 1 // consentLevel is All Paper
+else if (
+	(vars.requestedConsents.importantUpdatesByEmail[0] == true)
+	and (vars.requestedConsents.importantUpdatesByPost[0] == false)
+	and (vars.requestedConsents.accountUpdatesByEmail[0] == true)
+	and (vars.requestedConsents.accountUpdatesByPost[0] == false) 
+) 2
+else if (
+	(vars.requestedConsents.importantUpdatesByEmail[0] == false)
+		and (vars.requestedConsents.importantUpdatesByPost[0] == true)
+		and (vars.requestedConsents.accountUpdatesByEmail[0] == true)
+		and (vars.requestedConsents.accountUpdatesByPost[0] == false) 
+) 3
+else null
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<validation:is-true doc:name="Valid emailAndPostConsentLevel combination" doc:id="c428bae8-b533-43fb-bb21-f83f6b933b1e" config-ref="Validation_Config_Local_Expression" message="400 Bad Request" expression="#[vars.emailAndPostConsentLevel != null]">
+		</validation:is-true>
+	</sub-flow>
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+</mule>

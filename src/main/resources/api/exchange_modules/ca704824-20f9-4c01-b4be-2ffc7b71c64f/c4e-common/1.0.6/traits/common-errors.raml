@@ -1,0 +1,88 @@
+#%RAML 1.0 Trait
+
+responses: 
+  400:
+    description: Bad Request (including Business Validation failure)
+    headers: &trackingHeaders
+      Client-Transaction-Id:
+        description: |
+          Optional, provides traceability from the client's perspective for the unique transaction
+        type: string
+        required: false
+      Client-Session-Id:
+        description: |
+          Optional, provides traceability from the client's user's End to End journey/session
+        type: string
+        required: false
+      Api-Correlation-Id:
+        description: |
+          ID passed between Application Network from single entry point.
+        type: string
+        required: true
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/400-error.json
+  405:
+    description: Method Not Allowed
+    headers: *trackingHeaders
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/405-error.json
+  406:
+    description: Not Acceptable
+    headers: *trackingHeaders
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/406-error.json
+  415:
+    description: Unsupported Media Type
+    headers: *trackingHeaders
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/415-error.json
+  429:
+    headers: 
+      Retry-After:
+        examples:
+          after-seconds: |
+            120
+      Client-Transaction-Id:
+        description: |
+          Optional, provides traceability from the client's perspective for the unique transaction
+        type: string
+        required: false
+      Client-Session-Id:
+        description: |
+          Optional, provides traceability from the client's user's End to End journey/session
+        type: string
+        required: false
+      Api-Correlation-Id:
+        description: |
+          ID passed between Application Network from single entry point.
+        type: string
+        required: true
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: |
+          { "message" : "Too Many Requests"}
+  500:
+    description: Internal Service Error (unhandled exception)
+    headers: *trackingHeaders
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/500-error.json
+  501:
+    description: Not Implemented
+    headers: *trackingHeaders
+    body:
+      application/json:
+        type: !include ../dataTypes/error-message.raml
+        example: !include ../examples/500-error.json
+  
+        

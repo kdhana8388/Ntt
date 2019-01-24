@@ -1,0 +1,41 @@
+{
+  "consents": [
+    {
+      "consentType": "importantUpdatesByEmail",
+      "consent": false
+    },
+    {
+      "consentType": "importantUpdatesByPost",
+      "consent": true
+    },
+    {
+      "consentType": "accountUpdatesByEmail",
+      "consent": false
+    },
+    {
+      "consentType": "accountUpdatesByPost",
+      "consent": true
+    },
+    {
+      "consentType": "accaMarketing",
+      "consent": false
+    },
+    {
+      "consentType": "thirdPartyMarketing",
+      "consent": true
+    },
+    {
+      "consentType": "smsGeneralConsent",
+      "consent": false
+    },
+    {
+      "consentType": "smsResultConsent",
+      "consent": false
+    },
+    {
+      "consentType": "employerConsent",
+      "consent": false
+    }
+
+  ]
+}

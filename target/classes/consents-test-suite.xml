@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="consents-test-suite.xml" />
+	<munit:test name="Get_Consents_ConnectivityException" description="To test get consents flow with address consents not having accamarketing and phone consents without  smsResultConsent" doc:id="2e20d9b7-37a8-4117-89a0-9eb01a34cfe5" expectedErrorType="HTTP:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="ce8f2dc6-c077-43c6-838c-a45bddabf827" processor="wsc:consume">
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[%dw 2.0
+output application/xml
+---
+{
+	body: read(
+		MunitTools::getResourceAsStream('soap_response_examples/GetCustomerXmlResponse2.xml'),&quot;application/xml&quot;)
+	
+}]" mediaType="application/xml"/>
+					<munit-tools:error typeId="HTTP:CONNECTIVITY" />
+				
+</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to get-consents-flow" doc:id="7b09614c-566e-4326-98c4-9c90602b6b91" name="get-consents-flow"/>
+		</munit:execution>
+	</munit:test>
+	<munit:test name="Get_Consents_PositiveScenario" description="To test get consents flow with address consents not having accamarketing and phone consents without  smsResultConsent" doc:id="3c41e499-13ec-4907-8ac4-ff2d497c01cb">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="32d4f7e3-7685-4194-86f2-1b99e1d973bf" processor="wsc:consume">
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[%dw 2.0
+output application/xml
+---
+{
+	body: read(
+		MunitTools::getResourceAsStream('soap_response_examples/GetCustomerXmlResponse2.xml'),&quot;application/xml&quot;)
+	
+}]" mediaType="application/xml"/>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to get-consents-flow" doc:id="76d1715c-d5ee-402b-98be-9fe1af585de0" name="get-consents-flow"/>
+		</munit:execution>
+	</munit:test>
+	<munit:test name="Update_Consent_Connectivity_Exception" description="Test" doc:id="dc225731-a889-4974-a4be-2aa3d972eebb" expectedErrorType="HTTP:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="dc66c450-8ffe-48b9-af14-b27b2764070c" processor="wsc:consume">
+				<error-mapping targetType="ERRORMESSAGE:&quot;HTTP GET ON RESOURCE 'HTTPS://DEV.SOA.ACCA-AWSCLOUD.NET/INTERNAL/GETCUSTOMER_V4/GETCUSTOMER_CLOUDHUB_PS?WSDL' FAILED: CONNECTION TIMED OUT: NO FURTHER INFORMATION.&quot;" />
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:CONNECTIVITY"/>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<set-payload value="#[%dw 2.0
+output application/json
+---
+read(
+	MunitTools::getResourceAsString('scaffolder/request/patch_customers_{accaid}_consents_application_json.json'),
+	&quot;application/json&quot;
+)]" doc:name="Set Payload" doc:id="859e31c4-29f5-4e4b-b227-97b7252b41fd" />
+			<flow-ref doc:name="Flow-ref to update-consents-flow" doc:id="bd78bb45-2c9e-4a11-a9ba-e1cb415b3ed4" name="update-consents-flow"/>
+		</munit:execution>
+	</munit:test>
+
+<munit:test name="Update_Consent_Validation_Exception" description="Test" doc:id="013c7d5c-5e44-411d-b00b-5f91375c4301" expectedErrorType="VALIDATION:INVALID_BOOLEAN">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="01454ca9-793b-4cab-9f27-1f75577dff74" processor="wsc:consume">
+				<error-mapping targetType="ERRORMESSAGE:&quot;HTTP GET ON RESOURCE 'HTTPS://DEV.SOA.ACCA-AWSCLOUD.NET/INTERNAL/GETCUSTOMER_V4/GETCUSTOMER_CLOUDHUB_PS?WSDL' FAILED: CONNECTION TIMED OUT: NO FURTHER INFORMATION.&quot;" />
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<set-payload value="#[%dw 2.0
+output application/json
+---
+read(
+	MunitTools::getResourceAsString('scaffolder/request/patch_customers_{accaid}_consents_application_json2_500.json'),
+	&quot;application/json&quot;
+)]" doc:name="Set Payload" doc:id="9277951f-6afc-4cf0-95dd-643386ee8be6" />
+			<flow-ref doc:name="Flow-ref to update-consents-flow" doc:id="62916061-9944-4b0e-823b-298f0f5a3c70" name="update-consents-flow"/>
+		</munit:execution>
+	</munit:test>
+<munit:test name="Update_Consent_Transforming_Exception" description="Test" doc:id="e02cd24a-7302-45e1-b516-43f5d2dba563" expectedErrorType="MULE:EXPRESSION">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="198a6258-c379-4570-9f65-c04cf145fd6c" processor="wsc:consume">
+				<error-mapping targetType="ERRORMESSAGE:&quot;HTTP GET ON RESOURCE 'HTTPS://DEV.SOA.ACCA-AWSCLOUD.NET/INTERNAL/GETCUSTOMER_V4/GETCUSTOMER_CLOUDHUB_PS?WSDL' FAILED: CONNECTION TIMED OUT: NO FURTHER INFORMATION.&quot;" />
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to update-consents-flow" doc:id="215dac34-c5ff-4891-9189-b424a8746675" name="update-consents-flow"/>
+		</munit:execution>
+	</munit:test>	
+
+</mule>

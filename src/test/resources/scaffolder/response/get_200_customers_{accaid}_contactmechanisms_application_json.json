@@ -1,0 +1,15 @@
+{
+  "contactMechanisms": [
+    {
+      "type": "phone",
+      "subtype": "MOBILE",
+      "value": "242183820",
+      "isPrimary": false
+    },
+    {
+      "type": "email",
+      "value": "aslarbi@gmail.com",
+      "isPrimary": true
+    }
+  ]
+}

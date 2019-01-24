@@ -1,0 +1,5 @@
+{
+  "message": "Resource Not Found",
+  "description": "Customer not found",
+  "code": "RESOURCE_NOT_FOUND"
+}

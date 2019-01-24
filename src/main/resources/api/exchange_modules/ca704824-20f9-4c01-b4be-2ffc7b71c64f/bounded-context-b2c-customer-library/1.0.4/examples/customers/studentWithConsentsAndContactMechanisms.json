@@ -1,0 +1,74 @@
+{
+  "customer": {
+    "accaId": "12355",
+    "forename": "John",
+    "surname": "Doe",
+    "customerType": "student",
+    "country": "UK",
+    "consents": [
+      {
+        "consentType": "importantUpdatesByEmail",
+        "consent": false
+      },
+      {
+        "consentType": "importantUpdatesByPost",
+        "consent": true
+      },
+      {
+        "consentType": "accountUpdatesByEmail",
+        "consent": false
+      },
+      {
+        "consentType": "accountUpdatesByPost",
+        "consent": true
+      },
+      {
+        "consentType": "accaMarketing",
+        "consent": false
+      },
+      {
+        "consentType": "thirdPartyMarketing",
+        "consent": true
+      },
+      {
+        "consentType": "smsGeneralConsent",
+        "consent": false
+      },
+      {
+        "consentType": "smsResultConsent",
+        "consent": false
+      },
+      {
+        "consentType": "directoryOfMembers",
+        "consent": false
+      },
+      {
+        "consentType": "employerConsent",
+        "consent": false
+      },
+      {
+        "consentType": "affiliateList",
+        "consent": false
+      }
+    ],
+    "contactMechanisms": [
+      {
+        "type": "email",
+        "value": "test-member@example.com",
+        "isPrimary": true
+      },
+      {
+        "type": "phone",
+        "subtype": "telephone",
+        "value": "00000000",
+        "isPrimary": true
+      },
+      {
+        "type": "phone",
+        "subtype": "mobile",
+        "value": "00000001",
+        "isPrimary": false
+      }
+    ]
+  }
+}
